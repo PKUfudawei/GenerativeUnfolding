@@ -11,12 +11,12 @@ process_params:
 
 # Preprocessing
 hard_preprocessing:
-  type:
+  #type: 
   unit_hypercube: False
   args:
     pt_conserved: True
-reco_preprocessing:
-  type:
+#reco_preprocessing:
+  #type:
 
 # Training
 lr: 1.e-3

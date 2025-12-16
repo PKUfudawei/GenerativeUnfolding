@@ -272,6 +272,14 @@ def build_preprocessing(params: dict):
         if special_preproc:
             trafos.append(SpecialPreproc(shape=(n_dim,)))
 
+        if len(trafos) == 0:
+            class IdentityPreproc(PreprocTrafo):
+                def __init__(self, shape):
+                    super().__init__(input_shape=shape, output_shape=shape, invertible=True)
+                def transform(self, x, rev=False):
+                    return x
+            trafos.append(IdentityPreproc(shape=(n_dim,)))
+
         return PreprocChain(
             trafos,
             normalize=normalize

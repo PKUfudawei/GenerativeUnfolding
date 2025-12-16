@@ -423,8 +423,10 @@ class GenerativeUnfolding(Model):
 
         self.hard_pp = build_preprocessing(params.get("hard_preprocessing", {}))
         self.reco_pp = build_preprocessing(params.get("reco_preprocessing", {}))
-        self.hard_pp.to(device)
-        self.reco_pp.to(device)
+        if self.hard_pp is not None:
+            self.hard_pp.to(device)
+        if self.reco_pp is not None:
+            self.reco_pp.to(device)
 
         params["dims_in"] = self.hard_pp.output_shape[0]
         params["dims_c"] = self.reco_pp.output_shape[0]

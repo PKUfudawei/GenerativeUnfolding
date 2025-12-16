@@ -36,6 +36,7 @@ def init_train_args(subparsers):
 def run_training(args: argparse.Namespace):
     doc, params = Documenter.from_param_file(args.paramcard)
     model, process = init_run(doc, params, args.verbose)
+    print(f"Model parameters of {model.params.get('model', 'INN')}: {sum(p.numel() for p in model.model.parameters() if p.requires_grad):,}")
     print("------- Running training -------")
     model.train()
     print("------- Running evaluation -------")

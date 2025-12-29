@@ -13,6 +13,7 @@ from ..models.cfm import CFM, CFMwithTransformer, TransfusionAR
 from ..models.didi import DirectDiffusion, DirectDiffusion_Padded
 from ..models.classifier import Classifier
 from ..models.fff import FreeFormFlow
+from ..models.meanflow import MeanFlow
 from .preprocessing import build_preprocessing, PreprocChain
 from ..processes.base import Process, ProcessData
 from .documenter import Documenter
@@ -393,7 +394,7 @@ class Model:
             name: File name for the model (without path and extension)
         """
         file = os.path.join(self.model_path, f"{name}.pth")
-        state_dicts = torch.load(file, map_location=self.device)
+        state_dicts = torch.load(file, map_location=self.device, weights_only=False)
         for attr in self.state_dict_attrs:
             try:
                 getattr(self, attr).load_state_dict(state_dicts[attr])
@@ -405,7 +406,7 @@ class Model:
             self.use_ema = True
             self.model.use_ema = True
             file = os.path.join(self.model_path, f"ema_{name}.pth")
-            ema_dict = torch.load(file, map_location=self.device)
+            ema_dict = torch.load(file, map_location=self.device, weights_only=False)
             self.model.ema = EMA(self.model.net).to(self.device)
             self.model.ema.load_state_dict(ema_dict)
 

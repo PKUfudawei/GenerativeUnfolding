@@ -63,11 +63,11 @@ class Plots:
 
         self.compare = x_compare is not None
 
-        self.x_hard_pp = x_hard_pp
-        self.x_reco_pp = x_reco_pp
+        self.x_hard_pp = x_hard_pp.cpu().numpy() if x_hard_pp is not None else None
+        self.x_reco_pp = x_reco_pp.cpu().numpy() if x_reco_pp is not None else None
 
-        self.x_hard = x_hard
-        self.x_reco = x_reco
+        self.x_hard = x_hard.cpu().numpy()
+        self.x_reco = x_reco.cpu().numpy()
 
         self.obs_hard = []
         self.obs_reco = []
@@ -107,8 +107,8 @@ class Plots:
 
         plt.rc("font", family="serif", size=16)
         plt.rc("axes", titlesize="medium")
-        plt.rc("text.latex", preamble=r"\usepackage{amsmath}")
-        plt.rc("text", usetex=True)
+        #plt.rc("text.latex", preamble=r"\usepackage{amsmath}")
+        plt.rc("text", usetex=False)
 
     def plot_losses(self, file: str):
         """
@@ -413,7 +413,7 @@ class Plots:
                         # ct on cutdim
                         # close_events_hard_plotdim_cutdim = self.x_hard[full_mask]
 
-                        where_in_cutdim = (close_events_reco_cut_dim < event_reco_cutdim).float().mean()
+                        where_in_cutdim = (close_events_reco_cut_dim < event_reco_cutdim).mean()
                         # split close reco events in halfs sorted by cut dimension
                         close_events_reco_cut_dim = np.argsort(close_events_reco_cut_dim)
 

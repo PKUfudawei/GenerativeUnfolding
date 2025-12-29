@@ -36,7 +36,6 @@ def init_train_args(subparsers):
 def run_training(args: argparse.Namespace):
     doc, params = Documenter.from_param_file(args.paramcard)
     model, process = init_run(doc, params, args.verbose)
-    print(f"Model parameters of {model.params.get('model', 'INN')}: {sum(p.numel() for p in model.model.parameters() if p.requires_grad):,}")
     print("------- Running training -------")
     model.train()
     print("------- Running evaluation -------")
@@ -55,8 +54,8 @@ def run_plots(args: argparse.Namespace):
 
 def init_run(doc: Documenter, params: dict, verbose: bool) -> tuple[Model, Process]:
     use_cuda = torch.cuda.is_available()
-    print("Using device " + ("GPU" if use_cuda else "CPU"))
-    device = torch.device("cuda:0" if use_cuda else "cpu")
+    device = torch.device(params.get("device", "cuda:0") if use_cuda else "cpu")
+    print(f"Using device {device}")
     print("------- Loading data -------")
     dataset = params.get("process", "ZJetsGenerative")
     #if dataset == "ZJetsGenerative" or dataset == "ZJetsOmnifold":

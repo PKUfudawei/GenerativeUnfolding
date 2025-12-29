@@ -595,4 +595,3 @@ class Omnifold(Model):
             )
         else:
             return all_samples
-

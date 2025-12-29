@@ -1,5 +1,6 @@
 run_name: 30e
 run_folder: TransformerCFM
+#device: 'cuda:2'
 
 method: GenerativeUnfolding
 process_params:

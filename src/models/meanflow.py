@@ -43,6 +43,10 @@ class MeanFlow(nn.Module):
     def __init__(self, params: dict):
         super().__init__()
         self.params = params
+        self.bayesian = params.get("bayesian", False)
+        self.bayesian_samples = params.get("bayesian_samples", 20)
+        self.bayesian_layers = []
+        self.bayesian_factor = params.get("bayesian_factor", 1)
         self.reco_jets = self.params["process_params"].get("reco_jets", 4)
         self.build_net()
         print(f"    Using reco_jets {self.reco_jets}")

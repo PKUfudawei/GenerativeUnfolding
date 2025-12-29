@@ -22,7 +22,7 @@ hard_preprocessing:
 # Training
 lr: 1.e-3
 batch_size: 128
-batch_size_sample: 128
+batch_size_sample: 10000
 lr_scheduler: cosine_annealing
 weight_decay: 0.
 betas: [0.9, 0.99]

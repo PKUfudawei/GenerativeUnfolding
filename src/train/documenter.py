@@ -69,7 +69,7 @@ class Documenter:
                 base_dir_parts.append(run_folder)
             now = datetime.now()
             while True:
-                full_run_name = now.strftime("%Y%m%d_%H%M%S") + "_" + run_name
+                full_run_name = run_name+"_"+now.strftime("%Y%m%d_%H%M%S")
                 self.basedir = os.path.join(*base_dir_parts, full_run_name)
                 try:
                     os.makedirs(self.basedir)

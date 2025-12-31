@@ -52,7 +52,7 @@ class MeanFlow(nn.Module):
         print(f"    Using reco_jets {self.reco_jets}")
 
     def build_net(self):
-        self.net = SiT(depth=6, hidden_size=128, num_heads=4, mlp_ratio=2.0, use_conditions=True)
+        self.net = SiT(depth=6, hidden_size=128, num_heads=4, mlp_ratio=2.0, use_conditions=False)
 
     def adaptive_l2_loss(self, error, gamma=0.5, c=1e-3):
         """
@@ -89,9 +89,8 @@ class MeanFlow(nn.Module):
         return t, r
 
 
-    def batch_loss(self, data, condition, kl_scale=None, noise=None, IMF=False):
-        condition = condition.to(dtype=data.dtype)
-        
+    def batch_loss(self, target, source=None, kl_scale=None, cond=None):
+        data, noise = target, source
         time_dist=['lognorm', -0.4, 1.0]
         self.time_dist = time_dist
 
@@ -105,22 +104,22 @@ class MeanFlow(nn.Module):
         t_ = t.reshape(const_shape).detach().clone()
         z_t = (1 - t_) * data + t_ * noise
 
-        if IMF:
-            v_t = self.net(x=z_t, t=t, r=t, cond=condition, y=None)
+        if self.params.get('iMF', True):
+            v_t = self.net(x=z_t, t=t, r=t, cond=cond, y=None)
         else:
             v_t = noise - data
 
         u, dudt = jvp(
-            lambda z, t, r: self.net(x=z, t=t, r=r, cond=condition, y=None),
+            lambda z, t, r: self.net(x=z, t=t, r=r, cond=cond, y=None),
             (z_t, t, r), 
             (v_t, torch.ones_like(t), torch.zeros_like(r))
         )
-        u_target = v_t - (t - r).view(const_shape) * dudt
+        u_target = noise - data - (t - r).view(const_shape) * dudt
 
         error = u - u_target.detach()
         loss = self.adaptive_l2_loss(error, gamma=1)
         loss_mean_ref = (error.detach() ** 2).mean()
-        z0_theta = self.sample(noise=noise, cond=condition)
+        z0_theta = self.sample(noise=noise, cond=cond)
         loss_mmd = mmd2_loss(z0_theta, data, sigma=1)
         loss_terms = {
             "loss": loss.item(),
@@ -130,14 +129,14 @@ class MeanFlow(nn.Module):
 
         return loss, loss_terms
     
-    def sample(self, cond, noise=None):
-        if noise is None:
-            noise = torch.randn_like(cond)
-        batch_size = noise.shape[0]
-        t = torch.ones(batch_size, device=noise.device)
-        r = torch.zeros(batch_size, device=noise.device)
+    def sample(self, source, cond=None):
+        if source is None:
+            source = torch.randn_like(cond)
+        batch_size = source.shape[0]
+        t = torch.ones(batch_size, device=source.device)
+        r = torch.zeros(batch_size, device=source.device)
 
-        u_sample = self.net(x=noise, t=t, r=r, cond=cond, y=None)
-        x0_sample = noise - u_sample
+        u_sample = self.net(x=source, t=t, r=r, cond=cond, y=None)
+        x0_sample = source - u_sample
 
         return x0_sample

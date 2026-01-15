@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from scipy.stats import wasserstein_distance
 from scipy.special import erf, erfinv
@@ -539,3 +540,37 @@ def breit_wigner_reverse(events, peak_position, width):
     a = np.tan(a)
     a = a*width + peak_position
     return a
+
+
+def mmd2_kernel(x, y, sigma=1.0, eps=1e-8):
+    """
+    Your kernel style, but without time axis and without w.
+    x: [B, ...], y: [B, ...]
+    Returns: [B, B] kernel matrix.
+    """
+    # x -> [B, 1, ...], y -> [1, B, ...]
+    x_exp = x.unsqueeze(1)
+    y_exp = y.unsqueeze(0)
+
+    # flatten over all non-batch dims
+    flatten_dim = 2
+    diff2 = ((x_exp - y_exp) ** 2).flatten(flatten_dim).sum(-1)  # [B, B]
+
+    # L2 / (D * sigma)
+    D = torch.prod(torch.tensor(x.shape[1:]))
+    dist = torch.clamp_min(diff2, eps).sqrt() / (D * sigma)
+
+    K = torch.exp(-dist)  # w = 1
+    return K
+
+
+def mmd2_loss(x, y, sigma=1.0):
+    """
+    MMD^2 using the above kernel.
+    x, y: [B, ...]
+    """
+    Kxx = mmd2_kernel(x, x, sigma=sigma)
+    Kyy = mmd2_kernel(y, y, sigma=sigma)
+    Kxy = mmd2_kernel(x, y, sigma=sigma)
+
+    return Kxx.mean() + Kyy.mean() - 2 * Kxy.mean()

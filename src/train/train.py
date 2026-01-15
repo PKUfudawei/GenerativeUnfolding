@@ -14,6 +14,7 @@ from ..models.didi import DirectDiffusion, DirectDiffusion_Padded
 from ..models.classifier import Classifier
 from ..models.fff import FreeFormFlow
 from ..models.meanflow import MeanFlow
+from ..models.fm import FlowMatching
 from .preprocessing import build_preprocessing, PreprocChain
 from ..processes.base import Process, ProcessData
 from .documenter import Documenter

@@ -1,7 +1,7 @@
-run_name: MF_source
+run_name: iMF_source
 run_folder: MeanFlow
-device: 'cuda:7'
-iMF: False
+device: 'cuda:6'
+iMF: True
 
 method: GenerativeUnfolding
 process_params:

@@ -1,11 +1,10 @@
-import torch
-from torch.func import jvp
+import torch, torchdiffeq
 import torch.nn as nn
 from .SiT import SiT
 from ..train.utils import mmd2_loss
 
 
-class MeanFlow(nn.Module):
+class FlowMatching(nn.Module):
     def __init__(self, params: dict):
         super().__init__()
         self.params = params
@@ -33,59 +32,28 @@ class MeanFlow(nn.Module):
         loss_per_sample = torch.mean(error**2, dim=tuple(range(1, error.ndim)), keepdim=False)
         p = 1.0 - gamma
         weight = 1.0 / (loss_per_sample + c).pow(p)
-        return (weight.detach() * loss_per_sample).mean()  
-
-
-    def sample_t_r(self, batch_size, flow_ratio=0.75):
-        if self.time_dist[0] == 'uniform':
-            samples = torch.rand(batch_size, 2)
-
-        elif self.time_dist[0] == 'lognorm':
-            mu, sigma = self.time_dist[-2], self.time_dist[-1]
-            normal_samples = torch.randn(batch_size, 2) * sigma + mu
-            samples = 1 / (1 + torch.exp(-normal_samples))  # Apply sigmoid
-
-        t = samples.max(dim=1).values
-        r = samples.min(dim=1).values
-
-        num_selected = int(flow_ratio * batch_size)
-        indices = torch.randperm(batch_size)[:num_selected]
-        r[indices] = t[indices]
-
-        return t, r
+        return (weight.detach() * loss_per_sample).mean()
 
 
     def batch_loss(self, target, source=None, kl_scale=None, cond=None):
         data, noise = target, source
-        time_dist=['lognorm', -0.4, 1.0]
-        self.time_dist = time_dist
 
         if noise is None:
             noise = torch.randn_like(data)
 
         # Sample time steps
-        t, r = self.sample_t_r(data.shape[0], 0.75)
-        t, r = t.to(device=data.device), r.to(device=data.device)
+        t = torch.rand(data.shape[0], device=data.device)
         const_shape = (data.shape[0], *((1,) * (len(data.shape) - 1)))
         t_ = t.reshape(const_shape).detach().clone()
         z_t = (1 - t_) * data + t_ * noise
 
-        if self.params.get('iMF', True):
-            v_t = self.net(x=z_t, t=t, r=t, cond=cond, y=None)
-        else:
-            v_t = noise - data
+        v_t = self.net(x=z_t, t=t, r=t, cond=cond, y=None)
 
-        u, dudt = jvp(
-            lambda z, t, r: self.net(x=z, t=t, r=r, cond=cond, y=None),
-            (z_t, t, r), 
-            (v_t, torch.ones_like(t), torch.zeros_like(r))
-        )
-        u_target = noise - data - (t - r).view(const_shape) * dudt
-
-        error = u - u_target.detach()
+        error = v_t - (noise - data)
         loss = self.adaptive_l2_loss(error, gamma=1)
         loss_mean_ref = (error.detach() ** 2).mean()
-        z0_theta = self.sample(source=source, cond=cond)
+        with torch.no_grad():
+            z0_theta = self.sample(source=source, cond=cond)
         loss_mmd = mmd2_loss(z0_theta, data, sigma=1)
         loss_terms = {
             "loss": loss.item(),
@@ -95,14 +63,15 @@ class MeanFlow(nn.Module):
 
         return loss, loss_terms
     
-    def sample(self, source, cond=None):
+    def sample(self, source, num_steps=20, cond=None):
         if source is None:
             source = torch.randn_like(cond)
         batch_size = source.shape[0]
-        t = torch.ones(batch_size, device=source.device)
-        r = torch.zeros(batch_size, device=source.device)
-
-        u_sample = self.net(x=source, t=t, r=r, cond=cond, y=None)
-        x0_sample = source - u_sample
+        
+        x0_sample = source
+        time_schedule = torch.linspace(1.0, 0.0, num_steps + 1, device=source.device)
+        for t in torch.arange(0, num_steps, device=source.device):
+            time = time_schedule[t]
+            x0_sample -= (time_schedule[t+1] - time) * self.net(x=x0_sample, t=time.repeat(batch_size), r=time.repeat(batch_size), cond=cond, y=None)
 
         return x0_sample

@@ -1,7 +1,6 @@
-run_name: MF_source
-run_folder: MeanFlow
+run_name: FM_source
+run_folder: FlowMatching
 device: 'cuda:7'
-iMF: False
 
 method: GenerativeUnfolding
 process_params:
@@ -30,7 +29,7 @@ betas: [0.9, 0.99]
 epochs: 30
 
 # Architecture
-model: MeanFlow
+model: FlowMatching
 bayesian: False
 
 latent_space: gaussian

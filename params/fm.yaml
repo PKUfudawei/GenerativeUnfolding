@@ -1,6 +1,6 @@
 run_name: FM_source
 run_folder: FlowMatching
-device: 'cuda:7'
+device: 'cuda:3'
 
 method: GenerativeUnfolding
 process_params:
@@ -26,7 +26,7 @@ batch_size_sample: 10000
 lr_scheduler: cosine_annealing
 weight_decay: 0.
 betas: [0.9, 0.99]
-epochs: 30
+epochs: 15
 
 # Architecture
 model: FlowMatching

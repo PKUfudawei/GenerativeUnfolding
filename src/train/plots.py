@@ -177,10 +177,11 @@ class Plots:
             file: Output file name
         """
         pickle_data = []
-        with PdfPages(file) as pp:
-            for obs, bins, data_hard, data_reco, data_gen, data_compare in zip(
-                self.observables, self.bins, self.obs_hard, self.obs_reco, self.obs_gen_single, self.obs_compare
-            ):
+        
+        for idx, obs, bins, data_hard, data_reco, data_gen, data_compare in zip(
+            list(range(len(self.observables))), self.observables, self.bins, self.obs_hard, self.obs_reco, self.obs_gen_single, self.obs_compare
+        ):
+            with PdfPages(f'{idx}_{file}') as pp:
                 if self.bayesian:
                     data = data_gen[:, 0]
                 else:
@@ -217,7 +218,7 @@ class Plots:
                     dist_n, data_n = data_gen.shape
                     data = data_gen.reshape(-1)
                 y_gen_full, y_gen_err = self.compute_hist_data(bins, data, bayesian=self.bayesian)
-
+                """"
                 lines.append(
                     Line(
                         y=y_gen_full,
@@ -226,7 +227,7 @@ class Plots:
                         label=f"{dist_n} Unfoldings",
                         color=self.colors[3]
                     )
-                )
+                )"""
 
                 if self.compare:
                     y_comp, y_comp_err = self.compute_hist_data(bins, data_compare, bayesian=False)
@@ -592,8 +593,8 @@ class Plots:
                 n_panels,
                 1,
                 sharex=True,
-                figsize=(6, 4.5),
-                gridspec_kw={"height_ratios": (12, 3, 1)[:n_panels], "hspace": 0.00},
+                figsize=(6, 6),
+                gridspec_kw={"height_ratios": (10, 5, 1)[:n_panels], "hspace": 0.05},
             )
             if n_panels == 1:
                 axs = [axs]
@@ -647,16 +648,14 @@ class Plots:
 
             if show_ratios:
                 axs[1].set_ylabel(r"$\frac{\mathrm{Model}}{\mathrm{Truth}}$")
-                axs[1].set_yticks([0.95, 1, 1.05])
-                axs[1].set_ylim([0.9, 1.1])
+                axs[1].set_yticks([0.9, 1, 1.1])
+                axs[1].set_ylim([0.88, 1.12])
                 axs[1].axhline(y=1, c="black", ls="--", lw=0.7)
                 axs[1].axhline(y=1.05, c="black", ls="dotted", lw=0.5)
                 axs[1].axhline(y=0.95, c="black", ls="dotted", lw=0.5)
 
             if metrics is not None:
-                axs[-1].text(bins[0], 0.2, f"10*EMD: {metrics[0]:.4f} $\pm$ {metrics[1]:.5f}"
-                                           f"    ;    1e3*TriDist: {metrics[2]:.5f} $\pm$ "
-                                           f"{metrics[3]:.4f}", fontsize=13)
+                axs[-1].text(bins[0], 0.2, f"EMD: {metrics[0]:.2e},\tTriDist: {metrics[2]:.2e} ", fontsize=13)
                 axs[-1].set_yticks([])
             unit = "" if observable.unit is None else f" [{observable.unit}]"
             axs[-1].set_xlabel(f"${{{observable.tex_label}}}${unit}")

@@ -161,7 +161,7 @@ def evaluation_generative(
     else:
         pickle_file = None
     plots.plot_observables(doc.add_file("observables"+name+".pdf"), pickle_file)
-    plots.plot_observables_full(doc.add_file("observables_full" + name + ".pdf"), None)
+    #plots.plot_observables_full(doc.add_file("observables_full" + name + ".pdf"), None)
 
     if params.get("plot_metrics", False):
         plots.hist_metrics_unfoldings(doc.add_file("unfolding_metrics"+name+".pdf"))

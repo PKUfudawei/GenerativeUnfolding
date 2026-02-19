@@ -27,7 +27,7 @@ batch_size_sample: 10000
 lr_scheduler: cosine_annealing
 weight_decay: 0.
 betas: [0.9, 0.99]
-epochs: 15
+epochs: 30
 
 # Architecture
 model: MeanFlow
@@ -59,3 +59,4 @@ network_params:
 
 evaluate_train: False
 evaluate_analysis: False
+evaluate_best: True

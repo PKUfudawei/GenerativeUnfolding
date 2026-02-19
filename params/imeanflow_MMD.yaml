@@ -1,11 +1,13 @@
-run_name: TransformerCFM
-run_folder: FlowMatching
-device: 'cuda:1'
+run_name: iMF_source_EMD
+run_folder: MeanFlow
+device: 'cuda:3'
+iMF: True
+MMD_factor: 0.1
 
 method: GenerativeUnfolding
 process_params:
   train_slice: [0., 0.8]
-  val_slice: [0.8, 0.65]
+  val_slice: [0.8, 0.85]
   test_slice: [0.85, 1.0]
   training_file: "data/Pythia26_full.npz"
   analysis_file: "data/Herwig_full.npz"
@@ -29,7 +31,7 @@ betas: [0.9, 0.99]
 epochs: 30
 
 # Architecture
-model: CFMwithTransformer
+model: MeanFlow
 bayesian: False
 
 latent_space: gaussian
@@ -48,25 +50,13 @@ dim_feedforward: 32
 embedding_nets: False
 
 network_params:
-  network_class: Subnet
   internal_size: 76
   layers_per_block: 4
   activation: SiLU
 
-  embed_t: False
-  embed_t_mode: gfprojection
+  embed_t: True
+  embed_t_mode: sinusoidal
   embed_t_dim: 16
-
-solver: ODE
-solver_params:
-  t_min: 0
-  t_max: 1
-  mixed_precision: False
-  sde_method: srk
-  ode_method: dopri5
-  atol: 1.e-5
-  rtol: 1.e-5
-  step_size: 1.e-2
 
 evaluate_train: False
 evaluate_analysis: False

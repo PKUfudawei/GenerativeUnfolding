@@ -472,8 +472,8 @@ class GenerativeUnfolding(Model):
 
         input_train = self.input_data_preprocessed[0].clone()
         cond_train = self.cond_data_preprocessed[0].clone()
-        input_val = self.input_data_preprocessed[1].clone()
-        cond_val = self.cond_data_preprocessed[1].clone()
+        input_val = self.input_data_preprocessed[-1].clone()
+        cond_val = self.cond_data_preprocessed[-1].clone()
 
         permutation_train = torch.randperm(self.n_train_samples)
         permutation_val = torch.randperm(self.n_val_samples)

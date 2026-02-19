@@ -129,7 +129,7 @@ def evaluation_generative(
     print(f"    Generating distributions")
     x_gen_dist = model.predict_distribution(loader=loader)
 
-    if params.get("compute_test_loss", False):
+    if params.get("compute_test_loss", True):
         print(f"    Computing test loss")
         test_ll = model.dataset_loss(loader=loader)["loss"]
         print(f"    Result: {test_ll:.4f}")
@@ -160,7 +160,7 @@ def evaluation_generative(
         pickle_file = doc.add_file("observables"+name+".pkl")
     else:
         pickle_file = None
-    plots.plot_observables(doc.add_file("observables"+name+".pdf"), pickle_file)
+    plots.plot_observables(doc.add_file("observables"+name), pickle_file)
     #plots.plot_observables_full(doc.add_file("observables_full" + name + ".pdf"), None)
 
     if params.get("plot_metrics", False):
@@ -227,7 +227,7 @@ def evaluate_comparison(
     print(f"    Generating distributions")
     x_gen_dist = model.predict_distribution(loader=loader)
 
-    if params.get("compute_test_loss", False):
+    if params.get("compute_test_loss", True):
         print(f"    Computing test loss")
         test_ll = model.dataset_loss(loader=loader)["loss"]
         print(f"    Result: {test_ll:.4f}")
@@ -287,7 +287,7 @@ def evaluation_omnifold(
     time_diff = timedelta(seconds=round(t1 - t0))
     print(f"    Predictions completed after {time_diff}")
 
-    if params.get("compute_test_loss", False):
+    if params.get("compute_test_loss", True):
         print(f"    Computing {data} loss")
         test_ll = model.dataset_loss(loader=loader)["loss"]
         print(f"    Result: {test_ll:.4f}")
@@ -356,7 +356,7 @@ def evaluation_ttbar(
 
     x_gen_dist = model.predict_distribution(loader=loader)
 
-    if params.get("compute_test_loss", False):
+    if params.get("compute_test_loss", True):
         print(f"    Computing test loss")
         test_ll = model.dataset_loss(loader=loader)["loss"]
         print(f"    Result: {test_ll:.4f}")
@@ -411,7 +411,7 @@ def eval_model(doc: Documenter, params: dict, model: Model, process: Process):
     evaluation(doc, params, model, process)
     if params.get("evaluate_train", False):
         evaluation(doc, params, model, process, data="train", name="_train")
-    if params.get("evaluate_best", False):
+    if params.get("evaluate_best", True):
         evaluation(doc, params, model, process, model_name="best", name="_best")
         if params.get("evaluate_train", False):
             evaluation(doc, params, model, process, model_name="best", data="train", name="_best_train")

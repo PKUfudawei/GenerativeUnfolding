@@ -1,8 +1,8 @@
-import torch
+import torch, ot
 from torch.func import jvp
 import torch.nn as nn
-from .SiT import SiT
-from ..train.utils import mmd2_loss
+from .SiT import SiT_models
+from ..train.utils import mmd2_loss, GetEMD
 
 
 class MeanFlow(nn.Module):
@@ -18,7 +18,8 @@ class MeanFlow(nn.Module):
         print(f"    Using reco_jets {self.reco_jets}")
 
     def build_net(self):
-        self.net = SiT(depth=4, hidden_size=64, num_heads=2, mlp_ratio=2.0, use_conditions=False)
+        #self.net = SiT(depth=4, hidden_size=64, num_heads=2, mlp_ratio=2.0, use_conditions=False)
+        self.net = SiT_models['SiT-unfolding']()
 
     def adaptive_l2_loss(self, error, gamma=0.5, c=1e-3):
         """
@@ -86,11 +87,18 @@ class MeanFlow(nn.Module):
         loss = self.adaptive_l2_loss(error, gamma=1)
         loss_mean_ref = (error.detach() ** 2).mean()
         z0_theta = self.sample(source=source, cond=cond)
+
+        M = ot.dist(z0_theta, data)
+        M = M / M.max()
+        loss_emd2 = ot.emd2([], [], M)
         loss_mmd = mmd2_loss(z0_theta, data, sigma=1)
+        loss = loss + loss_mmd * self.params.get('MMD_factor', 0)
         loss_terms = {
             "loss": loss.item(),
             "loss_mean_ref": loss_mean_ref.item(),
-            "loss_mmd": loss_mmd.item()
+            "loss_mmd": loss_mmd.item(),
+            "loss_emd2": loss_emd2.item(),
+            #'loss_EMD': loss_EMD.item(),
         }
 
         return loss, loss_terms

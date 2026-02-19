@@ -1,6 +1,6 @@
 import torch, torchdiffeq
 import torch.nn as nn
-from .SiT import SiT
+from .SiT import SiT_models
 from ..train.utils import mmd2_loss
 
 
@@ -17,7 +17,7 @@ class FlowMatching(nn.Module):
         print(f"    Using reco_jets {self.reco_jets}")
 
     def build_net(self):
-        self.net = SiT(depth=4, hidden_size=64, num_heads=2, mlp_ratio=2.0, use_conditions=False)
+        self.net = SiT_models['SiT-unfolding']()
 
     def adaptive_l2_loss(self, error, gamma=0.5, c=1e-3):
         """
@@ -63,7 +63,7 @@ class FlowMatching(nn.Module):
 
         return loss, loss_terms
     
-    def sample(self, source, num_steps=20, cond=None):
+    def sample(self, source, num_steps=50, cond=None):
         if source is None:
             source = torch.randn_like(cond)
         batch_size = source.shape[0]

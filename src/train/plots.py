@@ -181,7 +181,7 @@ class Plots:
         for idx, obs, bins, data_hard, data_reco, data_gen, data_compare in zip(
             list(range(len(self.observables))), self.observables, self.bins, self.obs_hard, self.obs_reco, self.obs_gen_single, self.obs_compare
         ):
-            with PdfPages(f'{idx}_{file}') as pp:
+            with PdfPages(f'{file}_{idx}.pdf') as pp:
                 if self.bayesian:
                     data = data_gen[:, 0]
                 else:
@@ -655,7 +655,8 @@ class Plots:
                 axs[1].axhline(y=0.95, c="black", ls="dotted", lw=0.5)
 
             if metrics is not None:
-                axs[-1].text(bins[0], 0.2, f"EMD: {metrics[0]:.2e},\tTriDist: {metrics[2]:.2e} ", fontsize=13)
+                print(f"{pdf._filename}: EMD = {metrics[0]:.2e},\tTriDist = {metrics[2]:.2e}")
+                axs[-1].text(bins[0], 0.2, f"EMD = {metrics[0]:.2e},   TriDist = {metrics[2]:.2e} ", fontsize=13)
                 axs[-1].set_yticks([])
             unit = "" if observable.unit is None else f" [{observable.unit}]"
             axs[-1].set_xlabel(f"${{{observable.tex_label}}}${unit}")
@@ -843,20 +844,18 @@ class Plots:
                 emd_unfoldings = []
                 triangle_unfoldings = []
                 for n in range(self.n_unfoldings):
-                    emd = GetEMD(x_true, x_gen[n], nboot=0)
-                    triangle = get_triangle_distance(x_true, x_gen[n], bins, nboot=0)
+                    emd = GetEMD(x_true, x_gen[n])
+                    triangle = get_triangle_distance(x_true, x_gen[n], bins)
                     emd_unfoldings.append(emd)
                     triangle_unfoldings.append(triangle)
 
                 obs.metrics["emd_arr"] = [np.array(emd_unfoldings)]
                 obs.metrics["triangle_arr"] = [np.array(triangle_unfoldings)]
 
-                emd_full_mean, emd_full_std = GetEMD(x_true, x_gen.flatten(), nboot=3)
-                triangle_full_mean, triangle_full_std = get_triangle_distance(x_true, x_gen.flatten(), bins, nboot=3)
-                obs.metrics["emd_full"] = [round(emd_full_mean, 4)]
-                obs.metrics["emd_full_std"] = [round(emd_full_std, 5)]
-                obs.metrics["triangle_full"] = [round(triangle_full_mean, 4)]
-                obs.metrics["triangle_full_std"] = [round(triangle_full_std, 5)]
+                emd_full = GetEMD(x_true, x_gen.flatten())
+                triangle_full = get_triangle_distance(x_true, x_gen.flatten(), bins)
+                obs.metrics["emd_full"] = [round(emd_full, 4)]
+                obs.metrics["triangle_full"] = [round(triangle_full, 4)]
 
             else:
                 emd_arrs = []
@@ -870,21 +869,18 @@ class Plots:
                     emd_unfoldings = []
                     triangle_unfoldings = []
                     for n in range(self.n_unfoldings):
-                        emd = GetEMD(x_true, x_gen_bayes[n], nboot=0)
-                        triangle = get_triangle_distance(x_true, x_gen_bayes[n], bins, nboot=0)
+                        emd = GetEMD(x_true, x_gen_bayes[n])
+                        triangle = get_triangle_distance(x_true, x_gen_bayes[n], bins)
                         emd_unfoldings.append(emd)
                         triangle_unfoldings.append(triangle)
 
                     emd_arrs.append(np.array(emd_unfoldings))
                     triangle_arrs.append(np.array(triangle_unfoldings))
 
-                    emd_full_mean, emd_full_std = GetEMD(x_true, x_gen_bayes.flatten(), nboot=3)
-                    triangle_full_mean, triangle_full_std = get_triangle_distance(x_true, x_gen_bayes.flatten(), bins,
-                                                                                  nboot=3)
-                    emd_fulls.append(round(emd_full_mean, 4))
-                    emd_fulls_std.append(round(emd_full_std, 5))
-                    triangle_fulls.append(round(triangle_full_mean, 4))
-                    triangle_fulls_std.append(round(triangle_full_std, 5))
+                    emd_full = GetEMD(x_true, x_gen_bayes.flatten())
+                    triangle_full = get_triangle_distance(x_true, x_gen_bayes.flatten(), bins)
+                    emd_fulls.append(round(emd_full, 4))
+                    triangle_fulls.append(round(triangle_full, 4))
 
                 obs.metrics["emd_arr"] = np.stack(emd_arrs)
                 obs.metrics["triangle_arr"] = np.stack(triangle_arrs)
@@ -893,13 +889,10 @@ class Plots:
                 obs.metrics["triangle_full"] = triangle_fulls
                 obs.metrics["triangle_full_std"] = triangle_fulls_std
 
-                emd_full_full, emd_full_full_std = GetEMD(x_true, x_gen[1:].flatten(), nboot=3)
-                triangle_full_full, triangle_full_full_std = get_triangle_distance(x_true, x_gen[1:].flatten(), bins,
-                                                                              nboot=3)
+                emd_full_full = GetEMD(x_true, x_gen[1:].flatten())
+                triangle_full_full = get_triangle_distance(x_true, x_gen[1:].flatten(), bins)
                 obs.metrics["emd_full_full"] = emd_full_full
-                obs.metrics["emd_full_full_std"] = emd_full_full_std
                 obs.metrics["triangle_full_full"] = triangle_full_full
-                obs.metrics["triangle_full_full_std"] = triangle_full_full_std
 
     def hist_metrics_unfoldings(self, file: str, pickle_file: Optional[str] = None):
         pickle_data = {'emd': [], 'triangle': []}
@@ -1537,29 +1530,14 @@ class OmnifoldPlots(Plots):
             weights = self.weights[..., self.labels.squeeze()]
 
             if not self.bayesian:
-                emd_mean, emd_std = GetEMD(data_hard_herwig, data_hard_pythia, nboot=10, weights_arr=weights)
-                triangle_dist_mean, triangle_dist_std = get_triangle_distance(data_hard_herwig, data_hard_pythia, bins, nboot=10, weights=weights)
+                emd = GetEMD(data_hard_herwig, data_hard_pythia, weights_arr=weights)
+                triangle_dist = get_triangle_distance(data_hard_herwig, data_hard_pythia, bins, weights=weights)
             else:
-                emd_mean, emd_std = GetEMD(data_hard_herwig, data_hard_pythia, nboot=10, weights_arr=weights[0])
-                triangle_dist_mean, triangle_dist_std = get_triangle_distance(data_hard_herwig, data_hard_pythia, bins,
-                                                                              nboot=10, weights=weights[0])
-            #else:
-            #    emd = []
-            #    triangle_dist = []
-            #    for weight_sample in weights:
-            #        emd_sample, _ = GetEMD(data_hard_herwig, data_hard_pythia, nboot=1, weights_arr=weight_sample)
-            #        triangle_dist_sample, _ = get_triangle_distance(data_hard_herwig, data_hard_pythia, bins, nboot=1, weights=weight_sample)
-            #        emd.append(emd_sample)
-            #        triangle_dist.append(triangle_dist_sample)
-            #    emd_mean = np.array(emd).mean()
-            #    emd_std = np.array(emd).std()
-            #    triangle_dist_mean = np.array(triangle_dist).mean()
-            #    triangle_dist_std = np.array(triangle_dist).std()
+                emd = GetEMD(data_hard_herwig, data_hard_pythia, weights_arr=weights[0])
+                triangle_dist = get_triangle_distance(data_hard_herwig, data_hard_pythia, bins, weights=weights[0])
 
-            obs.emd_mean = round(emd_mean, 4)
-            obs.emd_std = round(emd_std, 5)
-            obs.triangle_mean = round(triangle_dist_mean, 4)
-            obs.triangle_std = round(triangle_dist_std, 5)
+            obs.emd = round(emd, 4)
+            obs.triangle_dist = round(triangle_dist, 4)
 
 
 class TTBar_Plots(Plots):

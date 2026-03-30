@@ -1,6 +1,6 @@
 run_name: MF_source
 run_folder: MeanFlow
-device: 'cuda:1'
+device: 'cuda:5'
 iMF: False
 
 method: GenerativeUnfolding
